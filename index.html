@@ -1,0 +1,1537 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>강예준 | Player Profile</title>
+<style>
+  /* ============================================================
+     0. 디자인 토큰 (CSS 변수)
+     - 컨셉: 게임 캐릭터 프로필 / 스탯 카드
+     - 배경: 밝은 민트 + 화이트 (어둡지 않게)
+     - 포인트: 민트 그린 + 골드(레벨업/보상 컬러)
+     ============================================================ */
+  :root{
+    --bg-base:      #EAFBF6;   /* 메인 배경 - 아주 밝은 민트 톤 */
+    --bg-panel:     #FFFFFF;   /* 카드 배경 - 화이트 */
+    --bg-soft:      #F2FBF8;   /* 서브 배경 */
+    --line-soft:    #D7F2E8;   /* 카드 보더 */
+
+    --mint:         #2FD9A8;   /* 메인 포인트 - 진한 민트 그린 */
+    --mint-deep:    #18B98B;   /* 강조 텍스트/버튼 */
+    --mint-tint:    #D6F7EC;   /* 배지/배경용 연한 민트 */
+
+    --gold:         #FFB23E;   /* 보상/레벨업 포인트 */
+    --gold-tint:    #FFEFD6;
+
+    --ink:          #1C2B28;   /* 기본 텍스트 (짙은 그린-블랙) */
+    --ink-sub:      #5C7A72;   /* 보조 텍스트 */
+    --ink-faint:    #9FBDB4;   /* 더 약한 텍스트 */
+
+    --radius-lg:    28px;
+    --radius-md:    18px;
+    --radius-sm:    12px;
+    --radius-pill:  999px;
+
+    --shadow-card:  0 14px 0 0 var(--line-soft);
+    --shadow-hover: 0 18px 0 0 var(--mint-tint);
+
+    --ease: cubic-bezier(.2,.9,.25,1);
+  }
+
+  /* ============================================================
+     1. 기본 리셋 & 전역 스타일
+     ============================================================ */
+  *{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+  }
+
+  html{
+    scroll-behavior:smooth;
+  }
+
+  body{
+    font-family:'Pretendard','Apple SD Gothic Neo','Segoe UI',system-ui,-apple-system,sans-serif;
+    background:var(--bg-base);
+    color:var(--ink);
+    line-height:1.6;
+    overflow-x:hidden;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  /* 배경 전체에 은은한 도트 패턴 + 그라데이션 -> 게임 맵 느낌 */
+  body::before{
+    content:'';
+    position:fixed;
+    inset:0;
+    z-index:-2;
+    background:
+      radial-gradient(circle at 12% 8%, rgba(47,217,168,0.18), transparent 40%),
+      radial-gradient(circle at 92% 18%, rgba(255,178,62,0.14), transparent 38%),
+      radial-gradient(circle at 50% 100%, rgba(47,217,168,0.14), transparent 45%),
+      radial-gradient(circle, rgba(47,217,168,0.12) 1.5px, transparent 1.5px) ;
+    background-size: auto, auto, auto, 26px 26px;
+    pointer-events:none;
+  }
+
+  ::-webkit-scrollbar{ width:8px; }
+  ::-webkit-scrollbar-track{ background:var(--bg-base); }
+  ::-webkit-scrollbar-thumb{ background:var(--mint-tint); border-radius:8px; }
+  ::-webkit-scrollbar-thumb:hover{ background:var(--mint); }
+
+  ::selection{
+    background:var(--mint);
+    color:#fff;
+  }
+
+  .container{
+    max-width:1140px;
+    margin:0 auto;
+    padding:0 24px;
+  }
+
+  section{
+    padding:110px 0;
+    position:relative;
+  }
+
+  /* 공통 섹션 헤더 - "퀘스트 라벨" 톤 */
+  .section-head{
+    margin-bottom:56px;
+  }
+  .section-eyebrow{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    font-size:13px;
+    font-weight:800;
+    letter-spacing:0.14em;
+    text-transform:uppercase;
+    color:var(--mint-deep);
+    background:var(--mint-tint);
+    border:2px solid var(--mint);
+    padding:6px 16px 8px;
+    border-radius:var(--radius-pill);
+    margin-bottom:16px;
+  }
+  .section-title{
+    font-size:clamp(28px, 4vw, 44px);
+    font-weight:900;
+    letter-spacing:-0.02em;
+    color:var(--ink);
+  }
+  .section-desc{
+    margin-top:14px;
+    font-size:16px;
+    color:var(--ink-sub);
+    max-width:560px;
+  }
+
+  /* ============================================================
+     2. 네비게이션 바 - 게임 HUD 스타일
+     ============================================================ */
+  .navbar{
+    position:fixed;
+    top:0;
+    left:0;
+    right:0;
+    z-index:100;
+    display:flex;
+    justify-content:center;
+    padding:16px 24px;
+    pointer-events:none;
+  }
+  .navbar nav{
+    pointer-events:auto;
+    display:flex;
+    align-items:center;
+    gap:6px;
+    background:#FFFFFF;
+    border:2px solid var(--mint);
+    border-radius:var(--radius-pill);
+    padding:8px 8px 8px 16px;
+    box-shadow:0 6px 0 0 var(--mint-tint);
+    transition:transform 0.5s var(--ease);
+  }
+  .navbar nav.is-hidden{
+    transform:translateY(-130%);
+  }
+  .nav-logo{
+    font-weight:900;
+    font-size:14px;
+    letter-spacing:0.04em;
+    color:var(--mint-deep);
+    margin-right:12px;
+    white-space:nowrap;
+    display:flex;
+    align-items:center;
+    gap:6px;
+  }
+  .nav-logo .lv-badge{
+    background:var(--gold);
+    color:#fff;
+    font-size:11px;
+    font-weight:900;
+    padding:3px 8px;
+    border-radius:var(--radius-pill);
+  }
+  .nav-links{
+    display:flex;
+    gap:2px;
+  }
+  .nav-links a{
+    text-decoration:none;
+    color:var(--ink-sub);
+    font-size:13px;
+    font-weight:700;
+    padding:9px 14px;
+    border-radius:var(--radius-pill);
+    transition:all .2s ease;
+    white-space:nowrap;
+  }
+  .nav-links a:hover,
+  .nav-links a:focus-visible{
+    color:#fff;
+    background:var(--mint);
+  }
+  .nav-links a.is-active{
+    color:#fff;
+    background:var(--mint-deep);
+  }
+
+  @media (max-width:640px){
+    .nav-logo{ display:none; }
+    .nav-links a{ padding:8px 10px; font-size:12px; }
+  }
+
+  /* ============================================================
+     3. HERO SECTION - 캐릭터 선택 화면 느낌
+     ============================================================ */
+  .hero{
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    padding-top:110px;
+    padding-bottom:80px;
+    position:relative;
+    overflow:hidden;
+  }
+
+  /* 떠다니는 게임 아이콘 장식들 */
+  .hero-deco{
+    position:absolute;
+    font-size:46px;
+    opacity:0.5;
+    pointer-events:none;
+    animation:float-deco 9s ease-in-out infinite;
+    filter:drop-shadow(0 8px 0 rgba(0,0,0,0.04));
+  }
+  .hero-deco.d1{ top:14%; left:6%; animation-delay:0s; font-size:54px; }
+  .hero-deco.d2{ top:65%; left:12%; animation-delay:-3s; font-size:38px; }
+  .hero-deco.d3{ top:20%; right:8%; animation-delay:-1.5s; font-size:60px; }
+  .hero-deco.d4{ top:70%; right:14%; animation-delay:-4.5s; font-size:42px; }
+  .hero-deco.d5{ top:42%; right:30%; animation-delay:-2.2s; font-size:30px; }
+  @keyframes float-deco{
+    0%,100%{ transform:translateY(0) rotate(0deg); }
+    50%{ transform:translateY(-22px) rotate(8deg); }
+  }
+  @media (max-width:768px){
+    .hero-deco{ display:none; }
+  }
+
+  /* ============================================================
+     2-2. 배경에서 떠다니는 게임 캐릭터 스프라이트
+     ============================================================ */
+  .hero-sprite{
+    position:absolute;
+    z-index:0;
+    pointer-events:none;
+    animation: sprite-bob 3.4s ease-in-out infinite, sprite-drift 22s ease-in-out infinite;
+  }
+  .hero-sprite.sprite-a{
+    top:16%;
+    right:10%;
+    width:92px;
+  }
+  .hero-sprite.sprite-b{
+    bottom:10%;
+    left:5%;
+    width:64px;
+    animation-duration: 3s, 26s;
+    animation-delay: -1.2s, -6s;
+    opacity:0.85;
+  }
+  @media (max-width:860px){
+    .hero-sprite.sprite-a{ top:6%; right:4%; width:64px; }
+    .hero-sprite.sprite-b{ display:none; }
+  }
+
+  /* 위아래로 둥둥 떠다니는 동작 */
+  @keyframes sprite-bob{
+    0%,100%{ transform:translateY(0) rotate(-2deg); }
+    50%{ transform:translateY(-18px) rotate(2deg); }
+  }
+  /* 좌우로 천천히 표류하는 동작 (bob과 합성됨) */
+  @keyframes sprite-drift{
+    0%,100%{ margin-left:0; }
+    50%{ margin-left:28px; }
+  }
+
+  /* 스프라이트 내부 다리 애니메이션 (걷는 느낌) */
+  .hero-sprite .leg{
+    animation: sprite-leg 0.6s ease-in-out infinite alternate;
+    transform-origin: top center;
+  }
+  .hero-sprite .leg.leg-right{
+    animation-direction: alternate-reverse;
+  }
+  @keyframes sprite-leg{
+    0%{ transform: rotate(-14deg); }
+    100%{ transform: rotate(14deg); }
+  }
+
+  /* 스프라이트 눈 깜빡임 */
+  .hero-sprite .eye{
+    animation: sprite-blink 4s steps(1) infinite;
+    transform-origin:center;
+  }
+  @keyframes sprite-blink{
+    0%, 92%, 100%{ transform:scaleY(1); }
+    96%{ transform:scaleY(0.1); }
+  }
+
+  .hero-content{
+    position:relative;
+    z-index:1;
+  }
+
+  /* 캐릭터 카드 + 정보 2단 레이아웃 */
+  .hero-grid{
+    display:grid;
+    grid-template-columns:300px 1fr;
+    gap:36px;
+    align-items:center;
+  }
+  @media (max-width:860px){
+    .hero-grid{ grid-template-columns:1fr; }
+  }
+
+  /* 캐릭터 카드 (왼쪽) */
+  .char-card{
+    background:var(--bg-panel);
+    border:3px solid var(--mint);
+    border-radius:var(--radius-lg);
+    padding:28px;
+    box-shadow:var(--shadow-card);
+    text-align:center;
+    position:relative;
+  }
+  .char-card .char-frame{
+    width:160px;
+    height:160px;
+    margin:0 auto 18px;
+    border-radius:50%;
+    background:linear-gradient(160deg, var(--mint) 0%, var(--mint-deep) 100%);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:64px;
+    font-weight:900;
+    color:#fff;
+    position:relative;
+    border:5px solid var(--bg-panel);
+    box-shadow:0 0 0 5px var(--mint-tint);
+  }
+  .char-card .char-frame::after{
+    content:'⚡';
+    position:absolute;
+    bottom:-6px;
+    right:-6px;
+    width:42px;
+    height:42px;
+    background:var(--gold);
+    border:4px solid var(--bg-panel);
+    border-radius:50%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:18px;
+  }
+  .char-name{
+    font-size:24px;
+    font-weight:900;
+    margin-bottom:4px;
+  }
+  .char-class{
+    display:inline-block;
+    font-size:12px;
+    font-weight:800;
+    color:var(--mint-deep);
+    background:var(--mint-tint);
+    padding:5px 14px;
+    border-radius:var(--radius-pill);
+    letter-spacing:0.06em;
+    margin-bottom:18px;
+  }
+
+  /* 캐릭터 카드 - 미니 스탯 */
+  .char-mini-stats{
+    display:flex;
+    justify-content:space-around;
+    border-top:2px dashed var(--line-soft);
+    padding-top:16px;
+    margin-top:6px;
+  }
+  .char-mini-stats div{
+    display:flex;
+    flex-direction:column;
+    gap:2px;
+  }
+  .char-mini-stats .v{
+    font-size:18px;
+    font-weight:900;
+    color:var(--ink);
+  }
+  .char-mini-stats .l{
+    font-size:11px;
+    color:var(--ink-faint);
+    text-transform:uppercase;
+    letter-spacing:0.06em;
+  }
+
+  /* 오른쪽 텍스트 영역 */
+  .hero-text .hero-eyebrow{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    font-size:13px;
+    font-weight:800;
+    color:var(--mint-deep);
+    background:var(--mint-tint);
+    border:2px solid var(--mint);
+    padding:6px 16px;
+    border-radius:var(--radius-pill);
+    margin-bottom:22px;
+  }
+  .hero-eyebrow .blip{
+    width:8px; height:8px;
+    border-radius:50%;
+    background:var(--mint-deep);
+    animation:pulse-dot 1.6s infinite;
+  }
+  @keyframes pulse-dot{
+    0%{ box-shadow:0 0 0 0 rgba(24,185,139,0.5); }
+    70%{ box-shadow:0 0 0 8px rgba(24,185,139,0); }
+    100%{ box-shadow:0 0 0 0 rgba(24,185,139,0); }
+  }
+
+  .hero-title{
+    font-size:clamp(40px, 7.5vw, 78px);
+    font-weight:900;
+    letter-spacing:-0.03em;
+    line-height:1.12;
+    margin-bottom:18px;
+  }
+  .hero-title .accent{
+    color:var(--mint-deep);
+    position:relative;
+    display:inline-block;
+  }
+  .hero-title .accent::after{
+    content:'';
+    position:absolute;
+    left:2px; right:2px; bottom:6px;
+    height:14px;
+    background:var(--gold-tint);
+    z-index:-1;
+    border-radius:6px;
+  }
+
+  /* 타이핑 애니메이션 - "대화창" 스타일 */
+  .hero-typing{
+    display:inline-flex;
+    align-items:center;
+    gap:10px;
+    background:#FFFFFF;
+    border:2px solid var(--line-soft);
+    border-radius:var(--radius-md);
+    padding:14px 20px;
+    font-size:clamp(15px, 2.4vw, 19px);
+    font-weight:700;
+    color:var(--ink);
+    min-height:1.6em;
+    margin-bottom:32px;
+    box-shadow:0 6px 0 0 var(--line-soft);
+  }
+  .hero-typing::before{
+    content:'💬';
+    font-size:18px;
+  }
+  .hero-typing .cursor{
+    display:inline-block;
+    width:3px;
+    height:1.1em;
+    background:var(--mint-deep);
+    animation:blink-cursor 0.9s step-end infinite;
+    border-radius:2px;
+  }
+  @keyframes blink-cursor{
+    0%,100%{ opacity:1; }
+    50%{ opacity:0; }
+  }
+
+  .hero-actions{
+    display:flex;
+    gap:14px;
+    flex-wrap:wrap;
+  }
+  .btn{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    padding:15px 30px;
+    border-radius:var(--radius-pill);
+    font-size:14px;
+    font-weight:800;
+    letter-spacing:0.02em;
+    text-decoration:none;
+    cursor:pointer;
+    transition:transform .18s var(--ease), box-shadow .18s var(--ease);
+    border:2px solid transparent;
+  }
+  .btn-primary{
+    background:var(--mint);
+    color:#fff;
+    box-shadow:0 6px 0 0 var(--mint-deep);
+  }
+  .btn-primary:hover{
+    transform:translateY(2px);
+    box-shadow:0 4px 0 0 var(--mint-deep);
+  }
+  .btn-ghost{
+    background:#fff;
+    color:var(--ink);
+    border-color:var(--line-soft);
+    box-shadow:0 6px 0 0 var(--line-soft);
+  }
+  .btn-ghost:hover{
+    transform:translateY(2px);
+    box-shadow:0 4px 0 0 var(--line-soft);
+    color:var(--mint-deep);
+  }
+  .btn:active{
+    transform:translateY(6px);
+    box-shadow:0 0 0 0 transparent !important;
+  }
+
+  /* ============================================================
+     3-1. 응원 버튼 (클릭 시 카운트 증가)
+     ============================================================ */
+  .cheer-wrap{
+    margin-bottom:18px;
+  }
+  .cheer-btn{
+    position:relative;
+    display:inline-flex;
+    align-items:center;
+    gap:12px;
+    padding:14px 26px;
+    border-radius:var(--radius-pill);
+    font-size:14px;
+    font-weight:900;
+    letter-spacing:0.02em;
+    color:#fff;
+    background:linear-gradient(160deg, var(--gold) 0%, #ff9d2e 100%);
+    border:2px solid #ff9d2e;
+    box-shadow:0 6px 0 0 #d97e1c;
+    cursor:pointer;
+    transition:transform .12s var(--ease), box-shadow .12s var(--ease);
+    overflow:visible;
+  }
+  .cheer-btn:hover{
+    transform:translateY(-2px);
+    box-shadow:0 8px 0 0 #d97e1c;
+  }
+  .cheer-btn:active,
+  .cheer-btn.is-pressed{
+    transform:translateY(6px);
+    box-shadow:0 0 0 0 transparent;
+  }
+  .cheer-btn .cheer-emoji{
+    font-size:18px;
+    display:inline-block;
+    transition:transform .25s var(--ease);
+  }
+  .cheer-btn.is-pressed .cheer-emoji{
+    transform:scale(1.3) rotate(-12deg);
+  }
+  .cheer-count{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    min-width:34px;
+    background:rgba(255,255,255,0.28);
+    border-radius:var(--radius-pill);
+    padding:3px 10px;
+    font-size:14px;
+    font-weight:900;
+    font-variant-numeric:tabular-nums;
+  }
+  /* 클릭할 때마다 위로 떠오르는 +1 표시 */
+  .cheer-pop{
+    position:absolute;
+    top:-4px;
+    right:14px;
+    font-size:13px;
+    font-weight:900;
+    color:var(--gold);
+    pointer-events:none;
+    opacity:0;
+    white-space:nowrap;
+  }
+  .cheer-pop.is-animating{
+    animation:cheer-float 0.8s ease-out forwards;
+  }
+  @keyframes cheer-float{
+    0%{ opacity:1; transform:translateY(0) scale(0.9); }
+    100%{ opacity:0; transform:translateY(-32px) scale(1.1); }
+  }
+
+  /* 스크롤 안내 */
+  .scroll-hint{
+    position:absolute;
+    bottom:28px;
+    left:50%;
+    transform:translateX(-50%);
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:6px;
+    font-size:11px;
+    letter-spacing:0.16em;
+    color:var(--ink-faint);
+    text-transform:uppercase;
+    font-weight:800;
+    z-index:1;
+  }
+  .scroll-hint .arrow{
+    font-size:18px;
+    animation:bounce-arrow 1.6s ease-in-out infinite;
+    color:var(--mint-deep);
+  }
+  @keyframes bounce-arrow{
+    0%,100%{ transform:translateY(0); }
+    50%{ transform:translateY(8px); }
+  }
+  @media (max-width:640px){
+    .scroll-hint{ display:none; }
+  }
+
+  /* ============================================================
+     4. 공통 카드 & reveal
+     ============================================================ */
+  .reveal{
+    opacity:0;
+    transform:translateY(24px);
+    transition:opacity .6s var(--ease), transform .6s var(--ease);
+  }
+  .reveal.is-visible{
+    opacity:1;
+    transform:translateY(0);
+  }
+
+  .card{
+    background:var(--bg-panel);
+    border:2px solid var(--line-soft);
+    border-radius:var(--radius-lg);
+    padding:30px;
+    box-shadow:var(--shadow-card);
+    transition:transform .22s var(--ease), box-shadow .22s var(--ease), border-color .22s ease;
+  }
+  .card:hover{
+    transform:translateY(-4px);
+    box-shadow:var(--shadow-hover);
+    border-color:var(--mint);
+  }
+
+  /* ============================================================
+     5. ABOUT ME - 캐릭터 정보창
+     ============================================================ */
+  .about-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(230px, 1fr));
+    gap:22px;
+  }
+  .info-card{
+    display:flex;
+    flex-direction:column;
+    gap:14px;
+  }
+  .info-card .info-icon{
+    width:52px;
+    height:52px;
+    border-radius:var(--radius-md);
+    background:var(--mint-tint);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:24px;
+  }
+  .info-card .info-label{
+    font-size:12px;
+    font-weight:800;
+    color:var(--mint-deep);
+    text-transform:uppercase;
+    letter-spacing:0.1em;
+  }
+  .info-card .info-value{
+    font-size:19px;
+    font-weight:900;
+    color:var(--ink);
+  }
+  .info-card .info-sub{
+    font-size:13px;
+    color:var(--ink-sub);
+  }
+
+  /* ============================================================
+     6. MY SKILLS - 스탯 카드 (게임 능력치)
+     ============================================================ */
+  .stats-card{
+    display:flex;
+    flex-direction:column;
+    gap:26px;
+  }
+  .stat-item{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+  }
+  .stat-top{
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+    font-size:15px;
+    font-weight:800;
+  }
+  .stat-top .stat-icon{
+    margin-right:8px;
+  }
+  .stat-top .stat-level{
+    font-size:13px;
+    font-weight:900;
+    color:#fff;
+    background:var(--mint-deep);
+    padding:3px 12px;
+    border-radius:var(--radius-pill);
+  }
+  .stat-bar-track{
+    width:100%;
+    height:16px;
+    border-radius:var(--radius-pill);
+    background:var(--bg-soft);
+    border:2px solid var(--line-soft);
+    overflow:hidden;
+    position:relative;
+  }
+  .stat-bar-fill{
+    height:100%;
+    width:0%;
+    border-radius:var(--radius-pill);
+    background:repeating-linear-gradient(45deg, var(--mint) 0 14px, var(--mint-deep) 14px 28px);
+    background-size:200% 100%;
+    transition:width 1.2s var(--ease);
+    position:relative;
+  }
+  .stat-note{
+    font-size:13px;
+    color:var(--ink-sub);
+  }
+
+  /* ============================================================
+     7. MY FAVORITES - 인벤토리 아이템 그리드
+     ============================================================ */
+  .fav-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(190px,1fr));
+    gap:22px;
+  }
+  .fav-card{
+    text-align:center;
+    padding:34px 18px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:12px;
+    cursor:default;
+    position:relative;
+  }
+  .fav-card .fav-rarity{
+    position:absolute;
+    top:14px;
+    right:14px;
+    font-size:10px;
+    font-weight:900;
+    color:var(--gold);
+    background:var(--gold-tint);
+    padding:3px 9px;
+    border-radius:var(--radius-pill);
+    letter-spacing:0.08em;
+  }
+  .fav-slot{
+    width:74px;
+    height:74px;
+    border-radius:var(--radius-md);
+    background:var(--mint-tint);
+    border:2px dashed var(--mint);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:38px;
+    transition:transform .3s var(--ease), background .3s ease;
+  }
+  .fav-card:hover .fav-slot{
+    transform:scale(1.12) rotate(-4deg);
+    background:var(--mint);
+  }
+  .fav-title{
+    font-size:16px;
+    font-weight:900;
+  }
+  .fav-desc{
+    font-size:13px;
+    color:var(--ink-sub);
+  }
+
+  /* ============================================================
+     8. MY DREAM - 퀘스트 로그
+     ============================================================ */
+  .quest-wrap{
+    position:relative;
+    border-radius:var(--radius-lg);
+    overflow:hidden;
+    padding:56px 40px;
+    background:var(--bg-panel);
+    border:3px solid var(--mint);
+    box-shadow:var(--shadow-card);
+  }
+  .quest-tag{
+    position:absolute;
+    top:0; right:0;
+    background:var(--gold);
+    color:#fff;
+    font-size:12px;
+    font-weight:900;
+    letter-spacing:0.1em;
+    padding:10px 24px 10px 30px;
+    border-radius:0 0 0 var(--radius-md);
+  }
+  .quest-content{
+    max-width:680px;
+  }
+  .quest-headline{
+    font-size:clamp(26px, 4vw, 40px);
+    font-weight:900;
+    line-height:1.35;
+    margin:16px 0 16px;
+  }
+  .quest-headline .hl{
+    color:var(--mint-deep);
+    background:var(--mint-tint);
+    padding:0 8px;
+    border-radius:6px;
+  }
+  .quest-text{
+    color:var(--ink-sub);
+    font-size:15px;
+    margin-bottom:32px;
+  }
+
+  /* 퀘스트 진행 단계 */
+  .quest-path{
+    display:flex;
+    align-items:center;
+    flex-wrap:wrap;
+    gap:0;
+  }
+  .quest-step{
+    display:flex;
+    align-items:center;
+    gap:14px;
+  }
+  .quest-step .step-circle{
+    width:48px;
+    height:48px;
+    border-radius:var(--radius-md);
+    border:3px solid var(--mint);
+    background:var(--mint-tint);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:20px;
+    flex-shrink:0;
+  }
+  .quest-step.is-done .step-circle{
+    background:var(--mint);
+    color:#fff;
+  }
+  .quest-step.is-future .step-circle{
+    border-style:dashed;
+    border-color:var(--gold);
+    background:var(--gold-tint);
+  }
+  .quest-step .step-label{
+    font-size:14px;
+    font-weight:800;
+    white-space:nowrap;
+  }
+  .quest-step .step-sub{
+    display:block;
+    font-size:12px;
+    font-weight:600;
+    color:var(--ink-faint);
+  }
+  .quest-arrow{
+    width:36px;
+    height:3px;
+    background:repeating-linear-gradient(to right, var(--line-soft) 0 6px, transparent 6px 12px);
+    margin:0 8px;
+    flex-shrink:0;
+    border-radius:2px;
+  }
+  @media (max-width:640px){
+    .quest-path{ flex-direction:column; align-items:flex-start; gap:18px; }
+    .quest-arrow{ width:3px; height:24px; margin:0 0 0 24px; background:repeating-linear-gradient(to bottom, var(--line-soft) 0 6px, transparent 6px 12px); }
+  }
+
+  /* ============================================================
+     9. QUOTE - 캐릭터 명언 카드
+     ============================================================ */
+  .quote-section{
+    text-align:center;
+  }
+  .quote-card{
+    max-width:760px;
+    margin:0 auto;
+    padding:64px 40px;
+    position:relative;
+    border-radius:var(--radius-lg);
+    background:linear-gradient(160deg, var(--mint) 0%, var(--mint-deep) 100%);
+    border:3px solid var(--mint-deep);
+    box-shadow:0 14px 0 0 var(--mint-tint);
+    color:#fff;
+  }
+  .quote-badge{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    background:rgba(255,255,255,0.18);
+    padding:6px 16px;
+    border-radius:var(--radius-pill);
+    font-size:12px;
+    font-weight:800;
+    letter-spacing:0.1em;
+    text-transform:uppercase;
+    margin-bottom:24px;
+  }
+  .quote-text{
+    font-size:clamp(26px, 4.5vw, 42px);
+    font-weight:900;
+    letter-spacing:-0.02em;
+    line-height:1.4;
+    margin-bottom:16px;
+  }
+  .quote-text .hl{
+    color:var(--gold);
+  }
+  .quote-sub{
+    font-size:14px;
+    color:rgba(255,255,255,0.85);
+    letter-spacing:0.06em;
+    text-transform:uppercase;
+    font-weight:800;
+  }
+
+  /* ============================================================
+     10. FOOTER
+     ============================================================ */
+  footer{
+    padding:56px 0 40px;
+    border-top:2px dashed var(--line-soft);
+    text-align:center;
+  }
+  .footer-name{
+    font-size:18px;
+    font-weight:900;
+    margin-bottom:8px;
+  }
+  .footer-tag{
+    font-size:13px;
+    color:var(--ink-faint);
+    letter-spacing:0.05em;
+    font-weight:700;
+  }
+  .footer-tag .heart{
+    color:var(--mint-deep);
+  }
+  .footer-top{
+    margin-top:22px;
+  }
+  .footer-top a{
+    font-size:12px;
+    font-weight:800;
+    color:var(--ink-sub);
+    text-decoration:none;
+    border:2px solid var(--line-soft);
+    padding:9px 20px;
+    border-radius:var(--radius-pill);
+    transition:all .2s ease;
+    display:inline-block;
+    background:#fff;
+  }
+  .footer-top a:hover{
+    color:#fff;
+    border-color:var(--mint);
+    background:var(--mint);
+  }
+
+  /* ============================================================
+     11. 반응형 보강
+     ============================================================ */
+  @media (max-width:640px){
+    section{ padding:72px 0; }
+    .hero{ padding-top:104px; }
+    .card{ padding:22px; }
+    .quote-card{ padding:44px 22px; }
+    .quest-wrap{ padding:36px 22px; }
+  }
+</style>
+</head>
+<body>
+
+  <!-- ============================================================
+       네비게이션 바 (게임 HUD)
+       ============================================================ -->
+  <div class="navbar">
+    <nav id="navbar">
+      <span class="nav-logo">강예준 <span class="lv-badge">LV.1</span></span>
+      <div class="nav-links">
+        <a href="#about">정보</a>
+        <a href="#skills">스탯</a>
+        <a href="#favorites">인벤토리</a>
+        <a href="#dream">퀘스트</a>
+        <a href="#quote">명언</a>
+      </div>
+    </nav>
+  </div>
+
+  <!-- ============================================================
+       HERO SECTION - 캐릭터 선택 화면
+       ============================================================ -->
+  <section class="hero" id="hero">
+    <span class="hero-deco d1">⚽</span>
+    <span class="hero-deco d2">🏀</span>
+    <span class="hero-deco d3">💰</span>
+    <span class="hero-deco d4">✈️</span>
+    <span class="hero-deco d5">⭐</span>
+
+    <!-- 배경에서 떠다니는 게임 캐릭터 스프라이트 (SVG, 외부 이미지 없음) -->
+    <svg class="hero-sprite sprite-a" viewBox="0 0 100 120" xmlns="http://www.w3.org/2000/svg">
+      <!-- 몸통 -->
+      <rect x="28" y="34" width="44" height="46" rx="14" fill="#2FD9A8" stroke="#18B98B" stroke-width="3"/>
+      <!-- 머리 -->
+      <circle cx="50" cy="26" r="22" fill="#FFFFFF" stroke="#2FD9A8" stroke-width="3"/>
+      <!-- 눈 -->
+      <ellipse class="eye" cx="42" cy="25" rx="3.5" ry="4.5" fill="#1C2B28"/>
+      <ellipse class="eye" cx="58" cy="25" rx="3.5" ry="4.5" fill="#1C2B28"/>
+      <!-- 미소 -->
+      <path d="M40 33 Q50 40 60 33" stroke="#1C2B28" stroke-width="3" fill="none" stroke-linecap="round"/>
+      <!-- 팔 -->
+      <rect x="14" y="42" width="14" height="10" rx="5" fill="#FFB23E"/>
+      <rect x="72" y="42" width="14" height="10" rx="5" fill="#FFB23E"/>
+      <!-- 다리 -->
+      <rect class="leg leg-left" x="33" y="78" width="12" height="26" rx="5" fill="#18B98B"/>
+      <rect class="leg leg-right" x="55" y="78" width="12" height="26" rx="5" fill="#18B98B"/>
+      <!-- 머리 위 별 -->
+      <text x="50" y="6" text-anchor="middle" font-size="14">✨</text>
+    </svg>
+
+    <svg class="hero-sprite sprite-b" viewBox="0 0 100 120" xmlns="http://www.w3.org/2000/svg">
+      <rect x="28" y="34" width="44" height="46" rx="14" fill="#FFB23E" stroke="#e08f1e" stroke-width="3"/>
+      <circle cx="50" cy="26" r="22" fill="#FFFFFF" stroke="#FFB23E" stroke-width="3"/>
+      <ellipse class="eye" cx="42" cy="25" rx="3.5" ry="4.5" fill="#1C2B28"/>
+      <ellipse class="eye" cx="58" cy="25" rx="3.5" ry="4.5" fill="#1C2B28"/>
+      <path d="M40 33 Q50 40 60 33" stroke="#1C2B28" stroke-width="3" fill="none" stroke-linecap="round"/>
+      <rect x="14" y="42" width="14" height="10" rx="5" fill="#2FD9A8"/>
+      <rect x="72" y="42" width="14" height="10" rx="5" fill="#2FD9A8"/>
+      <rect class="leg leg-left" x="33" y="78" width="12" height="26" rx="5" fill="#e08f1e"/>
+      <rect class="leg leg-right" x="55" y="78" width="12" height="26" rx="5" fill="#e08f1e"/>
+      <text x="50" y="6" text-anchor="middle" font-size="14">⭐</text>
+    </svg>
+
+    <div class="container hero-content">
+      <div class="hero-grid">
+
+        <!-- 캐릭터 카드 (왼쪽) -->
+        <div class="char-card">
+          <div class="char-frame">강</div>
+          <div class="char-name">강예준</div>
+          <div class="char-class">FUTURE ENTREPRENEUR</div>
+
+          <div class="char-mini-stats">
+            <div>
+              <span class="v">밝음</span>
+              <span class="l">성격</span>
+            </div>
+            <div>
+              <span class="v">경제</span>
+              <span class="l">관심</span>
+            </div>
+            <div>
+              <span class="v">사업가</span>
+              <span class="l">목표</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 텍스트 영역 (오른쪽) -->
+        <div class="hero-text">
+          <div class="hero-eyebrow">
+            <span class="blip"></span>
+            PLAYER PROFILE LOADED
+          </div>
+
+          <h1 class="hero-title">
+            나는<br>
+            <span class="accent">부자</span>가 될거야
+          </h1>
+
+          <div class="hero-typing">
+            <span id="typedText"></span><span class="cursor"></span>
+          </div>
+
+          <div class="cheer-wrap">
+            <button type="button" class="cheer-btn" id="cheerBtn">
+              <span class="cheer-emoji" id="cheerEmoji">📣</span>
+              응원하기
+              <span class="cheer-count" id="cheerCount">0</span>
+              <span class="cheer-pop" id="cheerPop">+1</span>
+            </button>
+          </div>
+
+          <div class="hero-actions">
+            <a href="#about" class="btn btn-primary">캐릭터 정보 보기 →</a>
+            <a href="#dream" class="btn btn-ghost">퀘스트 확인</a>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="scroll-hint">
+      Scroll Down
+      <span class="arrow">⌄</span>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       ABOUT ME SECTION - 캐릭터 정보창
+       ============================================================ -->
+  <section id="about">
+    <div class="container">
+      <div class="section-head reveal">
+        <div class="section-eyebrow">CHARACTER INFO</div>
+        <h2 class="section-title">캐릭터 정보창</h2>
+        <p class="section-desc">경제에 관심이 많고, 축구와 여행을 좋아하는 밝은 에너지의 캐릭터입니다.</p>
+      </div>
+
+      <div class="about-grid">
+        <div class="card info-card reveal">
+          <div class="info-icon">📈</div>
+          <div class="info-label">관심 분야</div>
+          <div class="info-value">경제</div>
+          <div class="info-sub">돈과 세상이 움직이는 원리에 관심이 많아요.</div>
+        </div>
+
+        <div class="card info-card reveal">
+          <div class="info-icon">⚽</div>
+          <div class="info-label">취미</div>
+          <div class="info-value">축구 보기 · 여행</div>
+          <div class="info-sub">경기를 보거나 새로운 곳을 둘러볼 때 즐거워요.</div>
+        </div>
+
+        <div class="card info-card reveal">
+          <div class="info-icon">🏀</div>
+          <div class="info-label">좋아하는 것</div>
+          <div class="info-value">농구</div>
+          <div class="info-sub">제일 좋아하는 스포츠예요.</div>
+        </div>
+
+        <div class="card info-card reveal">
+          <div class="info-icon">😄</div>
+          <div class="info-label">성격 / 분위기</div>
+          <div class="info-value">밝음</div>
+          <div class="info-sub">주변에 긍정적인 에너지를 전하는 편이에요.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       MY SKILLS SECTION - 스탯 카드
+       ============================================================ -->
+  <section id="skills">
+    <div class="container">
+      <div class="section-head reveal">
+        <div class="section-eyebrow">STATUS</div>
+        <h2 class="section-title">나의 스탯</h2>
+        <p class="section-desc">지금까지 쌓아온, 그리고 앞으로 채워나갈 능력치예요.</p>
+      </div>
+
+      <div class="card stats-card reveal">
+        <div class="stat-item">
+          <div class="stat-top">
+            <span><span class="stat-icon">⚽</span>축구 분석력</span>
+            <span class="stat-level">LV 90</span>
+          </div>
+          <div class="stat-bar-track">
+            <div class="stat-bar-fill" data-percent="90"></div>
+          </div>
+          <p class="stat-note">경기를 보면서 전략과 흐름을 분석하는 걸 좋아해요.</p>
+        </div>
+
+        <div class="stat-item">
+          <div class="stat-top">
+            <span><span class="stat-icon">😄</span>긍정 에너지</span>
+            <span class="stat-level">LV 95</span>
+          </div>
+          <div class="stat-bar-track">
+            <div class="stat-bar-fill" data-percent="95"></div>
+          </div>
+          <p class="stat-note">밝은 성격으로 주변 분위기를 좋게 만드는 편이에요.</p>
+        </div>
+
+        <div class="stat-item">
+          <div class="stat-top">
+            <span><span class="stat-icon">💰</span>경제 감각</span>
+            <span class="stat-level">LV 85</span>
+          </div>
+          <div class="stat-bar-track">
+            <div class="stat-bar-fill" data-percent="85"></div>
+          </div>
+          <p class="stat-note">돈과 경제가 어떻게 움직이는지 궁금해하고 찾아봐요.</p>
+        </div>
+
+        <div class="stat-item">
+          <div class="stat-top">
+            <span><span class="stat-icon">📚</span>공부</span>
+            <span class="stat-level">LV 30</span>
+          </div>
+          <div class="stat-bar-track">
+            <div class="stat-bar-fill" data-percent="30"></div>
+          </div>
+          <p class="stat-note">아직은 약하지만, 솔직하게 인정하고 채워나갈 부분이에요 😅</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       MY FAVORITES SECTION - 인벤토리
+       ============================================================ -->
+  <section id="favorites">
+    <div class="container">
+      <div class="section-head reveal">
+        <div class="section-eyebrow">INVENTORY</div>
+        <h2 class="section-title">인벤토리</h2>
+        <p class="section-desc">마우스를 올려보세요 — 아이템 슬롯이 반응해요.</p>
+      </div>
+
+      <div class="fav-grid">
+        <div class="card fav-card reveal">
+          <span class="fav-rarity">BEST</span>
+          <div class="fav-slot">🏀</div>
+          <div class="fav-title">농구</div>
+          <div class="fav-desc">제일 좋아하는 스포츠</div>
+        </div>
+        <div class="card fav-card reveal">
+          <span class="fav-rarity">RARE</span>
+          <div class="fav-slot">⚽</div>
+          <div class="fav-title">축구 시청</div>
+          <div class="fav-desc">경기 보는 시간이 제일 즐거워요</div>
+        </div>
+        <div class="card fav-card reveal">
+          <span class="fav-rarity">RARE</span>
+          <div class="fav-slot">✈️</div>
+          <div class="fav-title">여행</div>
+          <div class="fav-desc">새로운 곳을 경험하는 것</div>
+        </div>
+        <div class="card fav-card reveal">
+          <span class="fav-rarity">EPIC</span>
+          <div class="fav-slot">💰</div>
+          <div class="fav-title">경제 & 돈의 흐름</div>
+          <div class="fav-desc">세상이 움직이는 원리</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       MY DREAM SECTION - 퀘스트 로그
+       ============================================================ -->
+  <section id="dream">
+    <div class="container">
+      <div class="quest-wrap reveal">
+        <span class="quest-tag">MAIN QUEST</span>
+        <div class="quest-content">
+          <div class="section-eyebrow">QUEST LOG</div>
+          <h2 class="quest-headline">
+            나는 언젠가 <span class="hl">사업가</span>가 되어,<br>
+            <span class="hl">부자</span>가 될 거예요.
+          </h2>
+          <p class="quest-text">
+            지금은 경제에 관심을 가지는 단계지만, 앞으로는 더 넓은 세상을 여행하며
+            경험을 쌓고, 나만의 사업을 만들어가고 싶어요. 작은 관심에서 시작해서
+            큰 목표로 나아가는 과정을 즐기고 있어요.
+          </p>
+
+          <div class="quest-path">
+            <div class="quest-step is-done">
+              <div class="step-circle">📚</div>
+              <div class="step-label">관심 갖기<span class="step-sub">경제 공부 시작</span></div>
+            </div>
+            <div class="quest-arrow"></div>
+            <div class="quest-step">
+              <div class="step-circle">✈️</div>
+              <div class="step-label">경험 쌓기<span class="step-sub">여행 & 다양한 시야</span></div>
+            </div>
+            <div class="quest-arrow"></div>
+            <div class="quest-step is-future">
+              <div class="step-circle">🚀</div>
+              <div class="step-label">사업가 되기<span class="step-sub">나만의 비즈니스</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       QUOTE SECTION
+       ============================================================ -->
+  <section id="quote" class="quote-section">
+    <div class="container">
+      <div class="quote-card reveal">
+        <div class="quote-badge">⭐ Character Quote</div>
+        <p class="quote-text">
+          나는 <span class="hl">부자</span>가 될 거야
+        </p>
+        <p class="quote-sub">— 강예준 —</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       FOOTER
+       ============================================================ -->
+  <footer>
+    <div class="container">
+      <div class="footer-name">강예준 (Kang Ye-jun)</div>
+      <p class="footer-tag">Made with <span class="heart">AI</span> &amp; My Imagination</p>
+      <div class="footer-top">
+        <a href="#hero">맨 위로 ↑</a>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    /* ============================================================
+       1. 네비게이션 바: 스크롤 방향에 따라 숨기기/보이기
+       ============================================================ */
+    (function(){
+      const nav = document.getElementById('navbar');
+      let lastScrollY = window.scrollY;
+      let ticking = false;
+
+      function onScroll(){
+        const currentY = window.scrollY;
+        if(currentY > lastScrollY && currentY > 120){
+          nav.classList.add('is-hidden');
+        } else {
+          nav.classList.remove('is-hidden');
+        }
+        lastScrollY = currentY;
+        ticking = false;
+      }
+
+      window.addEventListener('scroll', function(){
+        if(!ticking){
+          requestAnimationFrame(onScroll);
+          ticking = true;
+        }
+      });
+    })();
+
+    /* ============================================================
+       2. Hero 영역 타이핑 애니메이션 (대화창 스타일)
+       ============================================================ */
+    (function(){
+      const target = document.getElementById('typedText');
+      const phrases = [
+        '경제에 관심이 많은 플레이어입니다.',
+        '축구와 농구를 좋아합니다.',
+        '여행을 통해 더 큰 세상을 봅니다.',
+        '언젠가 멋진 사업가가 될 거예요.'
+      ];
+
+      let phraseIndex = 0;
+      let charIndex = 0;
+      let isDeleting = false;
+
+      const TYPING_SPEED = 70;
+      const DELETING_SPEED = 35;
+      const HOLD_TIME = 1600;
+      const SWITCH_DELAY = 400;
+
+      function tick(){
+        const currentPhrase = phrases[phraseIndex];
+
+        if(!isDeleting){
+          charIndex++;
+          target.textContent = currentPhrase.slice(0, charIndex);
+
+          if(charIndex === currentPhrase.length){
+            isDeleting = true;
+            setTimeout(tick, HOLD_TIME);
+            return;
+          }
+          setTimeout(tick, TYPING_SPEED);
+        } else {
+          charIndex--;
+          target.textContent = currentPhrase.slice(0, charIndex);
+
+          if(charIndex === 0){
+            isDeleting = false;
+            phraseIndex = (phraseIndex + 1) % phrases.length;
+            setTimeout(tick, SWITCH_DELAY);
+            return;
+          }
+          setTimeout(tick, DELETING_SPEED);
+        }
+      }
+
+      setTimeout(tick, 600);
+    })();
+
+    /* ============================================================
+       2-1. 응원 버튼: 클릭할 때마다 숫자 증가 + 이펙트
+       ============================================================ */
+    (function(){
+      const btn = document.getElementById('cheerBtn');
+      const emoji = document.getElementById('cheerEmoji');
+      const countEl = document.getElementById('cheerCount');
+      const pop = document.getElementById('cheerPop');
+
+      const emojis = ['📣','👏','🔥','💪','⭐'];
+      let count = 0;
+
+      btn.addEventListener('click', function(){
+        count++;
+        countEl.textContent = count;
+
+        // 버튼 눌림 효과
+        btn.classList.add('is-pressed');
+        setTimeout(function(){ btn.classList.remove('is-pressed'); }, 150);
+
+        // 이모지 랜덤 변경
+        emoji.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+
+        // +1 떠오르는 효과 (재실행을 위해 클래스 토글)
+        pop.classList.remove('is-animating');
+        // 강제 리플로우로 애니메이션 재시작
+        void pop.offsetWidth;
+        pop.classList.add('is-animating');
+      });
+    })();
+
+    /* ============================================================
+       3. 스크롤 시 카드/섹션 등장 애니메이션 (Intersection Observer)
+       ============================================================ */
+    (function(){
+      const revealEls = document.querySelectorAll('.reveal');
+
+      const observer = new IntersectionObserver(function(entries){
+        entries.forEach(function(entry){
+          if(entry.isIntersecting){
+            entry.target.classList.add('is-visible');
+            observer.unobserve(entry.target);
+          }
+        });
+      }, {
+        threshold: 0.15,
+        rootMargin: '0px 0px -40px 0px'
+      });
+
+      revealEls.forEach(function(el){
+        observer.observe(el);
+      });
+    })();
+
+    /* ============================================================
+       4. My Skills 섹션의 스탯 바 채우기
+       ============================================================ */
+    (function(){
+      const bars = document.querySelectorAll('.stat-bar-fill');
+
+      const observer = new IntersectionObserver(function(entries){
+        entries.forEach(function(entry){
+          if(entry.isIntersecting){
+            const bar = entry.target;
+            const percent = bar.getAttribute('data-percent');
+            requestAnimationFrame(function(){
+              bar.style.width = percent + '%';
+            });
+            observer.unobserve(bar);
+          }
+        });
+      }, { threshold: 0.4 });
+
+      bars.forEach(function(bar){
+        observer.observe(bar);
+      });
+    })();
+
+    /* ============================================================
+       5. 현재 보이는 섹션에 해당하는 nav 링크 활성화
+       ============================================================ */
+    (function(){
+      const sections = document.querySelectorAll('section[id]');
+      const navLinks = document.querySelectorAll('.nav-links a');
+
+      const map = {};
+      navLinks.forEach(function(link){
+        const id = link.getAttribute('href').replace('#','');
+        map[id] = link;
+      });
+
+      const observer = new IntersectionObserver(function(entries){
+        entries.forEach(function(entry){
+          const link = map[entry.target.id];
+          if(!link) return;
+
+          if(entry.isIntersecting){
+            navLinks.forEach(function(l){ l.classList.remove('is-active'); });
+            link.classList.add('is-active');
+          }
+        });
+      }, { threshold: 0.5 });
+
+      sections.forEach(function(sec){ observer.observe(sec); });
+    })();
+  </script>
+
+</body>
+</html>
